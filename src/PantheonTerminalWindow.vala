@@ -1027,7 +1027,8 @@ namespace PantheonTerminal {
         }
 
         private bool is_a_file_browser (AppInfo app) {
-            return app.get_name () == _("Files") ||
+            string? name = ((DesktopAppInfo)app).get_string ("Name"); // Gets untranslated name //
+            return (name != null && name == "Files") ||
                    app.get_icon ().to_string () == "system-file-manager" ||
                    app.get_icon ().to_string () == "folder";
         }
