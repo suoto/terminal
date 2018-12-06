@@ -28,6 +28,7 @@ namespace PantheonTerminal {
         private Gtk.Revealer search_revealer;
         private Gtk.ToggleButton search_button;
         private Gtk.Button zoom_default_button;
+        private AppInfo file_browser;
 
         private HashTable<string, TerminalWidget> restorable_terminals;
         private bool is_fullscreen = false;
@@ -200,16 +201,20 @@ namespace PantheonTerminal {
             var search_menuitem = new Gtk.MenuItem.with_label (_("Find…"));
             search_menuitem.set_action_name (ACTION_PREFIX + ACTION_SEARCH);
 
-            var show_in_file_browser_menuitem = new Gtk.MenuItem.with_label (_("Show in File Browser"));
-            show_in_file_browser_menuitem.set_action_name (ACTION_PREFIX + ACTION_OPEN_IN_FILES);
-
             menu = new Gtk.Menu ();
             menu.append (copy_menuitem);
             menu.append (copy_last_output_menuitem);
             menu.append (paste_menuitem);
             menu.append (select_all_menuitem);
             menu.append (search_menuitem);
-            menu.append (show_in_file_browser_menuitem);
+
+            file_browser = find_a_file_browser ();
+            if (file_browser != null) {
+                var show_in_file_browser_menuitem = new Gtk.MenuItem.with_label (_("Show in File Browser"));
+                show_in_file_browser_menuitem.set_action_name (ACTION_PREFIX + ACTION_OPEN_IN_FILES);
+                menu.append (show_in_file_browser_menuitem);
+            }
+
             menu.insert_action_group ("win", actions);
 
             menu.popped_up.connect (() => {
@@ -1000,18 +1005,55 @@ namespace PantheonTerminal {
         }
 
         void action_open_in_files () {
+            GLib.List<File>? file = null;
             try {
-                string uri = Filename.to_uri (current_terminal.get_shell_location ());
-
-                try {
-                     Gtk.show_uri (null, uri, Gtk.get_current_event_time ());
-                } catch (Error e) {
-                     warning (e.message);
-                }
-
-            } catch (ConvertError e) {
-                warning (e.message);
+                file.append (File.new_for_uri (Filename.to_uri (current_terminal.get_shell_location ())));
+            } catch (GLib.Error e) {
+                var notification = new Notification (_("Cannot open %s in file browser").printf (current_terminal.get_shell_location ()));
+                notification.set_body (e.message);
+                notification.set_icon (new ThemedIcon ("utilities-terminal"));
+                Application.get_default ().send_notification (null, notification);
+                return;
             }
+
+            try {
+                file_browser.launch (file, null);
+            } catch (GLib.Error e) {
+                var notification = new Notification (_("Cannot launch file browser"));
+                notification.set_body (e.message);
+                notification.set_icon (new ThemedIcon ("utilities-terminal"));
+                Application.get_default ().send_notification (null, notification);
+            }
+        }
+
+        private bool is_a_file_browser (AppInfo app) {
+            return app.get_name () == _("Files") ||
+                   app.get_icon ().to_string () == "system-file-manager" ||
+                   app.get_icon ().to_string () == "folder";
+        }
+
+        private AppInfo? find_a_file_browser () {
+            var default_app = AppInfo.get_default_for_type ("inode/directory", true);
+            if (is_a_file_browser (default_app)) {
+                return default_app;
+            }
+
+            /* Default app for folders is not a filebrowser, return native file browser if present */
+            var apps = AppInfo.get_all_for_type ("inode/directory");
+            foreach (AppInfo app in apps) {
+                if (app.get_executable () == "io.elementary.files") {
+                    return app;
+                }
+            }
+
+            /* Else return another 'standard' file browser if present */
+            foreach (AppInfo app in apps) {
+                if (is_a_file_browser (app)) {
+                    return app;
+                }
+            }
+
+            return null;
         }
 
         void action_scroll_to_last_command () {
