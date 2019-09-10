@@ -13,6 +13,8 @@ i18n = import('i18n')
 
 add_global_arguments('-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()), language:'c')
 
+add_test_setup('double_timeout', timeout_multiplier: 2, is_default: true)
+
 if get_option('ubuntu-bionic-patched-vte')
     add_project_arguments(['--define', 'UBUNTU_BIONIC_PATCHED_VTE'], language : 'vala')
 endif
