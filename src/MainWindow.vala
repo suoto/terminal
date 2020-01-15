@@ -39,8 +39,11 @@ namespace Terminal {
         private const string HIGH_CONTRAST_FG = "#333";
         private const string DARK_BG = "rgba(46, 46, 46, 0.95)";
         private const string DARK_FG = "#a5a5a5";
-        private const string SOLARIZED_LIGHT_BG = "rgba(253, 246, 227, 0.95)";
-        private const string SOLARIZED_LIGHT_FG = "#586e75";
+        // private const string SOLARIZED_LIGHT_BG = "rgba(253, 246, 227, 0.95)";
+        // private const string SOLARIZED_LIGHT_FG = "#586e75";
+
+        private const string SOLARIZED_LIGHT_BG = "rgba(46, 46, 46, 0.95)";
+        private const string SOLARIZED_LIGHT_FG = "#a5a5a5";
 
         public bool unsafe_ignored;
         public bool focus_restored_tabs { get; construct; default = true; }
